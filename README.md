@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-2EA44F)](LICENSE)
 [![Dataset: QUIT](https://img.shields.io/badge/Dataset-QUIT-orange)](#-experimental-setup)
 [![Task: Inferential QA](https://img.shields.io/badge/Task-Inferential%20QA-purple)](#-overview)
-[![Submitted: ECIR 2027](https://img.shields.io/badge/Submitted-ECIR%202027-C0392B)](https://www.ecir2027.eu/)
+[![Submitted: ECIR 2027](https://img.shields.io/badge/Submitted-ECIR%202027-C0392B)](https://www.ecir2027.co.uk/)
 
 **A benchmark and analysis framework for studying whether retrieval scores increase when valid inferential evidence is added to a passage.**
 
