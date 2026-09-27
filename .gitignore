@@ -1,0 +1,9 @@
+data/
+results/
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+*.log

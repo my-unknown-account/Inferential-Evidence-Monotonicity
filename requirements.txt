@@ -1,0 +1,7 @@
+rank-bm25
+tqdm
+matplotlib
+torch
+transformers>=4.47,<5
+sentence-transformers
+pylate
