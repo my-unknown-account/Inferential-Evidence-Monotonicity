@@ -1,8 +1,6 @@
 <div align="center">
 
-# *More Evidence, Lower Score?*
-
-## *Evidence Monotonicity in Inferential Retrieval*
+# *More Evidence, Lower Score? Evidence Monotonicity in Inferential Retrieval*
 
 [![Python](https://img.shields.io/badge/Python-3.11.9-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2EA44F)](LICENSE)
