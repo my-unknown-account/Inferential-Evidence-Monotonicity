@@ -284,8 +284,8 @@ def save_figure_2(results_dir: Path, figures_dir: Path, retrievers: list[str]) -
     axes[0].set_title("(a) EMVR by evidence accumulation")
     axes[0].set_xlabel("Evidence transition")
     axes[0].set_ylabel("EMVR (%)")
-    axes[1].set_title("(b) EMVR by added-hint convergence")
-    axes[1].set_xlabel("Added-hint convergence")
+    axes[1].set_title("(b) EMVR by added-evidence convergence")
+    axes[1].set_xlabel("Added-evidence convergence")
 
     for axis in axes:
         axis.set_ylim(0, y_max)
