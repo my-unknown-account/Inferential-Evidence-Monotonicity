@@ -1,6 +1,6 @@
 <div align="center">
 
-# *More Evidence, Lower Score? Evidence Monotonicity in Inferential Retrieval*
+# *Evidence Monotonicity in Retrieval Scoring*
 
 [![Python](https://img.shields.io/badge/Python-3.11.9-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2EA44F)](LICENSE)
@@ -8,25 +8,26 @@
 [![Task: Inferential QA](https://img.shields.io/badge/Task-Inferential%20QA-purple)](#-overview)
 [![Submitted: ECIR 2027](https://img.shields.io/badge/Submitted-ECIR%202027-C0392B)](https://www.ecir2027.co.uk/)
 
-**A benchmark and analysis framework for studying whether retrieval scores increase when valid inferential evidence is added to a passage.**
+**A diagnostic framework for studying whether retrieval scores remain stable or increase when answer-supporting evidence is added while existing evidence is retained.**
 
 </div>
 
 ## 🧭 Overview
 
 This repository contains the code and reproducibility scripts for the paper
-**"More Evidence, Lower Score? Evidence Monotonicity in Inferential
-Retrieval"**.
+**"Evidence Monotonicity in Retrieval Scoring"**.
 
 The paper studies a diagnostic question for inferential question answering:
 
-> If a passage receives one more valid answer-supporting hint, should a
-> retriever score the expanded passage at least as highly as before?
+> Do retrieval scores reflect the incremental value of useful evidence?
 
 Inferential QA differs from standard answer-containing retrieval: the answer may
 not appear explicitly in the passage, and a reader must infer it by combining
 indirect evidence. This repository tests whether retrieval scores behave
-consistently as such evidence accumulates.
+consistently as such evidence accumulates. Evidence monotonicity is a diagnostic
+of scoring behavior rather than a universal requirement for retrieval functions.
+The analysis compares controlled passage scores; it does not measure changes in
+full-corpus ranking.
 
 Across **129,600 controlled one-hint evidence additions**, adding valid evidence
 lowers the retrieval score in roughly **30-67%** of cases, depending on the
@@ -37,8 +38,8 @@ accuracy.
 
 - Defines **evidence monotonicity** as a score-level diagnostic for inferential
   retrieval.
-- Measures monotonicity violations across six retrieval paradigms using
-  controlled evidence additions from QUIT.
+- Measures monotonicity violations across six retrievers spanning five retrieval
+  paradigms using controlled evidence additions from QUIT.
 - Studies when violations occur by evidence-accumulation stage and added-hint
   convergence.
 - Quantifies whether retrieval-score changes align with downstream reader
@@ -59,19 +60,25 @@ The experiment uses the QUIT test split:
 | One-hint transitions per question | 75 |
 | Total controlled evidence additions | 129,600 |
 
-Each QUIT question has five valid hints. A hint is indirect evidence about the
-target answer: it supports inference without simply revealing the answer. For
-each evidence set, retriever scores are averaged over all hint permutations so
-that the analysis compares evidence content rather than sentence order.
+Each QUIT question has five answer-supporting evidence items, called hints. A
+hint supports inference without simply revealing the answer. Every transition
+retains all existing evidence and adds exactly one item, while the question and
+target answer remain fixed. For each evidence set, retriever scores are averaged
+over all hint permutations to control for changes caused solely by evidence order.
 
 The main metric is **Evidence Monotonicity Violation Rate (EMVR)**:
 
 ```text
+mean_score(q, S) = average score over all permutations of evidence set S
+delta_score = mean_score(q, S + added_item) - mean_score(q, S)
 EMVR = # score-decreasing valid evidence additions / # valid evidence additions
 ```
 
 Ties are not counted as violations. Confidence intervals are computed by
-bootstrap resampling questions rather than individual transitions.
+bootstrap resampling questions rather than individual transitions. RQ2 groups
+additions by evidence-accumulation stage (`1->2`, `2->3`, `3->4`, `4->5`) and by
+added-evidence convergence in five equal-width bins over `[0, 1]`. Convergence
+measures how effectively an evidence item narrows the space of plausible answers.
 
 For downstream utility, the analysis uses reader outputs from six generative
 readers in QUIT:
@@ -84,7 +91,10 @@ readers in QUIT:
 - Qwen-3-8B
 
 Reader utility is the average exact-match correctness across readers and hint
-permutations for an evidence set.
+permutations for an evidence set. QUIT excludes questions answerable without
+context to limit parametric answerability. RQ3 compares the probability of reader
+improvement after score decreases with the probability after score increases,
+excluding score ties.
 
 ## 🔎 Retrievers
 
@@ -129,9 +139,14 @@ accumulates.
 | ColBERT | 24.61 | 46.77 |
 
 BM25 behaves differently, decreasing from 75.22% at `1->2` to 56.25% at
-`4->5`. Violations also remain substantial for high-convergence hints, showing
-that highly informative evidence is not necessarily rewarded by retrieval
-scores.
+`4->5`. ReasonIR rises from 43.43% at `1->2` to above 61% in the final two
+stages.
+
+In the highest-convergence bin (`0.8-1.0`), EMVR ranges from 30.81% for BGE to
+57.74% for ReasonIR among neural retrievers, and reaches 66.97% for BM25. This
+bin has the highest violation rate for each neural retriever under the paper's
+binning. Highly informative evidence is therefore not necessarily rewarded by
+retrieval scores.
 
 ### 🎯 RQ3: Retrieval Scores Only Weakly Track Reader Utility
 
@@ -146,6 +161,11 @@ Reader accuracy often improves even when retrieval score decreases.
 | BGE | 47.53 | 50.75 | +3.22 [2.15, 4.31] |
 | ReasonIR | 47.98 | 52.04 | +4.06 [3.07, 5.14] |
 
+Probabilities are percentages. The difference is `P(reader up | score up)` minus
+`P(reader up | score down)`, in percentage points. The confidence intervals
+include zero for BM25 and DPR; the differences are positive for SPLADE, ColBERT,
+BGE, and ReasonIR.
+
 For BGE, 18,582 transitions, or 14.34% of all evidence additions, decrease the
 retrieval score while increasing reader accuracy. For BM25, this score-down /
 reader-up contradiction reaches 33.43% of all additions.
@@ -159,8 +179,14 @@ What global brand withdrew ("rested") its old red-jacketed striding man
 104 years after its first appearance in 1908?
 ```
 
-The answer is **Johnnie Walker**. Before adding the final hint, none of the six
-readers answers correctly. After adding:
+The answer is **Johnnie Walker**. The initial passage contains two hints:
+
+```text
+The brand originated in the Scottish burgh of Kilmarnock in East Ayrshire.
+This brand was first established by a grocer in Scotland.
+```
+
+None of the six readers answers correctly. After adding a third hint:
 
 ```text
 It is the world's highest selling Scotch whisky.
@@ -168,6 +194,16 @@ It is the world's highest selling Scotch whisky.
 
 all six readers answer correctly, but SPLADE, DPR, BGE, and ColBERT assign
 lower retrieval scores to the expanded passage.
+
+| Retriever | Initial passage score | Expanded passage score |
+| --- | ---: | ---: |
+| SPLADE | 8.0483 | 5.5701 |
+| DPR | 57.3569 | 54.1458 |
+| BGE | 0.4556 | 0.4229 |
+| ColBERT | 10.2374 | 9.4045 |
+
+These are the passage scores shown in Figure 1 for QUIT question
+`triviahg_train_8512`; the aggregate analyses use permutation-averaged scores.
 
 This illustrates the central mismatch: extra valid evidence can make inference
 easier for readers while making the passage look less relevant to retrievers.
@@ -359,8 +395,8 @@ table:
 
 ## 📝 Citation
 
-If this repository supports your work, please cite the accompanying paper when
-it becomes available.
+If this repository supports your work, please cite the accompanying paper,
+**"Evidence Monotonicity in Retrieval Scoring"**, when it becomes available.
 
 ## 📄 License
 
